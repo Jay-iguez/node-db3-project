@@ -1,5 +1,11 @@
 const db = require('../../data/db-config')
 
+const create_error = (status, msg) => {
+  const error = new Error(msg)
+  error.status = status
+  return error
+}
+
 async function find() { // EXERCISE A
 
   const rows = await db('schemes as sc')
@@ -8,8 +14,8 @@ async function find() { // EXERCISE A
     .count('st.step_id as number_of_steps')
     .groupBy('sc.scheme_id')
     .orderBy('sc.scheme_id')
-    
-    return rows
+
+  return rows
   /*
     1A- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`.
     What happens if we change from a LEFT join to an INNER join?
@@ -28,7 +34,39 @@ async function find() { // EXERCISE A
   */
 }
 
-function findById(scheme_id) { // EXERCISE B
+async function findById(scheme_id) { // EXERCISE B
+
+  const row_by_id = await db('schemes as sc')
+    .select('sc.scheme_id', 'sc.scheme_name', 'st.*')
+    .leftJoin('steps as st', 'sc.scheme_id', '=', 'st.scheme_id')
+    .where('sc.scheme_id', scheme_id)
+    .orderBy('st.step_number')
+
+  const row_formatted_result = {
+    scheme_id: row_by_id[0].scheme_id || parseInt(scheme_id),
+    scheme_name: row_by_id[0].scheme_name,
+    steps: []
+  }
+
+  if (row_by_id[0].step_id === null) {
+    return row_formatted_result
+  }
+
+  row_formatted_result.steps = row_by_id.map(step => {
+    return {
+      step_id: step.step_id,
+      step_number: step.step_number,
+      instructions: step.instructions
+    }
+  })
+  
+  return row_formatted_result
+  /**
+   * 
+   * 
+   */
+
+
   /*
     1B- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`:
 
@@ -68,23 +106,7 @@ function findById(scheme_id) { // EXERCISE B
     4B- Using the array obtained and vanilla JavaScript, create an object with
     the structure below, for the case _when steps exist_ for a given `scheme_id`:
 
-      {
-        "scheme_id": 1,
-        "scheme_name": "World Domination",
-        "steps": [
-          {
-            "step_id": 2,
-            "step_number": 1,
-            "instructions": "solve prime number theory"
-          },
-          {
-            "step_id": 1,
-            "step_number": 2,
-            "instructions": "crack cyber security"
-          },
-          // etc
-        ]
-      }
+     
 
     5B- This is what the result should look like _if there are no steps_ for a `scheme_id`:
 
@@ -139,4 +161,5 @@ module.exports = {
   findSteps,
   add,
   addStep,
+  create_error
 }
