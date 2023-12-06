@@ -6,6 +6,10 @@ const create_error = (status, msg) => {
   return error
 }
 
+const is_type_of = (value, type) => {
+  return typeof value === type ? true : false
+}
+
 async function find() { // EXERCISE A
 
   const rows = await db('schemes as sc')
@@ -150,13 +154,34 @@ async function findSteps(scheme_id) { // EXERCISE C
   */
 }
 
-function add(scheme) { // EXERCISE D
+async function add(scheme) { // EXERCISE D
+  const [id] = await db('schemes').insert(scheme)
+
+  const newScheme = await findById(id)
+
+  return newScheme
+
   /*
     1D- This function creates a new scheme and resolves to _the newly created scheme_.
   */
 }
 
-function addStep(scheme_id, step) { // EXERCISE E
+async function addStep(scheme_id, step) { // EXERCISE E
+
+  console.log('what;', step)
+  const body = {
+    scheme_id: scheme_id,
+    step_number: step.step_number,
+    instructions: step.instructions
+  }
+  console.log(body)
+
+  await db('steps').insert(body)
+
+  const steps = await findSteps(scheme_id)
+
+  return steps
+
   /*
     1E- This function adds a step to the scheme with the given `scheme_id`
     and resolves to _all the steps_ belonging to the given `scheme_id`,
@@ -170,5 +195,6 @@ module.exports = {
   findSteps,
   add,
   addStep,
-  create_error
+  create_error,
+  is_type_of
 }
